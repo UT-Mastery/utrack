@@ -91,6 +91,18 @@ textarea{font:12px/1.4 ui-monospace,monospace}
 .chk input{width:22px;height:22px;min-height:0;padding:0;accent-color:var(--accent)}
 tr.me td{background:var(--accent-soft)}
 .note p{margin:0 0 8px}
+.cdisp{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 14px;text-align:right;margin-bottom:10px}
+.cexpr{min-height:20px;font-size:14px;color:var(--mute);word-break:break-all}
+.cres{font-size:30px;font-weight:700;letter-spacing:-.02em;word-break:break-all}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.keys button{border-radius:14px;min-height:54px;font-size:19px;font-weight:600;padding:0}
+.keys .op{background:var(--accent-soft);color:var(--accent)}
+.keys .eq{grid-column:1/-1;background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.grp{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 2px}
+.cout{margin-top:4px}
+.krow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.krow b{text-align:right}
+label select{margin-top:0}
 #eOut{overflow-x:auto}
 #eOut th{white-space:normal}
 .scroll{overflow-x:auto;margin:6px 0}
@@ -188,6 +200,16 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     </div>
   </details>
 </div>
+<div id="t-calc" class="tab" hidden>
+  <h2>Kalkulator</h2>
+  <details class="sec" open>
+    <summary><b>Kalkulator biasa</b></summary>
+    <div class="cdisp"><div class="cexpr" id="kExpr"> </div><div class="cres" id="kRes">0</div></div>
+    <div class="keys" id="kKeys"></div>
+  </details>
+  <div id="calcList"></div>
+  <div class="note">Semua kiraan ialah anggaran sahaja dan bukan nasihat kewangan. Semak syarat sebenar dengan bank atau pengurus dana sebelum membuat keputusan.</div>
+</div>
 </main>
 <nav id="tabs">
 <button data-tab="port" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M3 7l12-3v3"/><circle cx="16.5" cy="14" r="1.2"/></svg>Pelaburan</button>
@@ -195,6 +217,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 <button data-tab="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Kalendar</button>
 <button data-tab="cmp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg>Banding</button>
 <button data-tab="epf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>KWSP</button>
+<button data-tab="calc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>Kira</button>
 </nav>
 <dialog id="dlg">
   <h2>Cari dana</h2>
@@ -421,9 +444,9 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   }
   function addCmp(k){if(S.cmp.indexOf(k)<0){if(S.cmp.length>=10){alert("Maksimum 10 dana untuk perbandingan.");return}S.cmp.push(k);save()}}
   function showTab(t){
-    tab=t;["port","price","cal","cmp","epf"].forEach(function(x){$("t-"+x).hidden=x!==t});
+    tab=t;["port","price","cal","cmp","epf","calc"].forEach(function(x){$("t-"+x).hidden=x!==t});
     Array.prototype.forEach.call(document.querySelectorAll("#tabs button"),function(b){b.className=b.dataset.tab===t?"on":""});
-    if(t==="price")renderPrice();if(t==="cal")renderCal();if(t==="cmp")renderCmp();if(t==="epf")renderEpf();if(t==="port")render();
+    if(t==="price")renderPrice();if(t==="cal")renderCal();if(t==="cmp")renderCmp();if(t==="epf")renderEpf();if(t==="calc")renderCalc();if(t==="port")render();
   }
   $("tabs").onclick=function(e){var b=e.target.closest("button[data-tab]");if(b)showTab(b.dataset.tab)};
 
@@ -596,6 +619,113 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
   $("eAge").oninput=renderEpf;$("eBal").oninput=renderEpf;$("eGrow").onchange=renderEpf;
   $("eYears").onclick=function(e){var b=e.target.closest("button[data-y]");if(b){eYear=b.dataset.y;renderEpf()}};
   $("eFunds").onclick=function(){showTab("price");$("pep").value="1";renderPrice(1)};
+  // ===== Tab Kira: kalkulator biasa + kalkulator kewangan =====
+  function nfmt(v){if(!isFinite(v))return"Ralat";return(+v.toPrecision(12)).toLocaleString("en-MY",{maximumFractionDigits:8})}
+  function calcEval(str){
+    var t=str.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-").match(/\d*\.?\d+|[-+*\/()%]/g);
+    if(!t)return NaN;var i=0;
+    function peek(){return t[i]}
+    function next(){return t[i++]}
+    function expr(){var v=term();while(peek()==="+"||peek()==="-"){var o=next(),j0=i,r=term();if(i-j0===2&&t[i-1]==="%")r=v*r;v=o==="+"?v+r:v-r}return v}
+    function term(){var v=unary();while(peek()==="*"||peek()==="/"){var o=next(),r=unary();v=o==="*"?v*r:v/r}return v}
+    function unary(){if(peek()==="-"){next();return-unary()}if(peek()==="+"){next();return unary()}return post()}
+    function post(){var v=prim();while(peek()==="%"){next();v=v/100}return v}
+    function prim(){var x=next();if(x==="("){var v=expr();if(next()!==")")throw 0;return v}if(x!==undefined&&/^\d*\.?\d+$/.test(x))return parseFloat(x);throw 0}
+    try{var v=expr();if(i<t.length)return NaN;return v}catch(e){return NaN}
+  }
+  var kx="",kdone=false,KEYROWS=[["C","⌫","%","÷"],["7","8","9","×"],["4","5","6","−"],["1","2","3","+"],["(","0",")","."]];
+  function kShow(){$("kExpr").textContent=kx||" ";var v=kx?calcEval(kx):NaN;$("kRes").textContent=kx?(isNaN(v)?"…":nfmt(v)):"0"}
+  function kPress(k){
+    var ops="+−×÷";
+    if(k==="C"){kx="";kdone=false}
+    else if(k==="⌫"){kx=kx.slice(0,-1);kdone=false}
+    else if(k==="="){var v=calcEval(kx);if(!isNaN(v)&&isFinite(v)){$("kExpr").textContent=kx+" =";kx=String(+v.toPrecision(12));kdone=true;$("kRes").textContent=nfmt(v)}return}
+    else{
+      if(kdone&&ops.indexOf(k)<0&&k!=="%")kx="";
+      kdone=false;
+      if(ops.indexOf(k)>-1&&kx===""){if(k==="−")kx="−";else return}
+      else if(ops.indexOf(k)>-1&&ops.indexOf(kx.slice(-1))>-1){kx=kx.slice(0,-1)+k}
+      else kx+=k;
+    }
+    kShow();
+  }
+  function pmt(P,i,n){return i===0?P/n:P*i/(1-Math.pow(1+i,-n))}
+  function pc2(x){return x.toFixed(2)+"%"}
+  var CALCS=[
+    {g:"Pelaburan"},
+    {id:"fv",t:"Nilai masa depan pelaburan",opt:["P","M"],f:[["P","Modal awal (RM)","cth. 10000"],["M","Sumbangan bulanan (RM)","cth. 300"],["r","Pulangan setahun (%)","cth. 6"],["y","Tempoh (tahun)","cth. 10"]],
+      run:function(v){if(v.y<=0)return null;var i=v.r/1200,n=Math.round(v.y*12),g=Math.pow(1+i,n),fv=i===0?v.P+v.M*n:v.P*g+v.M*(g-1)/i,inv=v.P+v.M*n;return[["Nilai akhir",money(fv)],["Jumlah modal dilaburkan",money(inv)],["Anggaran untung",money(fv-inv)]]},
+      n:"Sumbangan dibuat pada hujung setiap bulan dan pulangan dikompaun setiap bulan."},
+    {id:"goal",t:"Simpanan bulanan untuk sasaran",opt:["P"],f:[["T","Sasaran (RM)","cth. 100000"],["P","Modal awal (RM)","cth. 5000"],["r","Pulangan setahun (%)","cth. 5"],["y","Tempoh (tahun)","cth. 10"]],
+      run:function(v){if(v.y<=0||v.T<=0)return null;var i=v.r/1200,n=Math.round(v.y*12),g=Math.pow(1+i,n),need=v.T-v.P*g,m=i===0?need/n:need*i/(g-1);if(m<=0)return[["Sumbangan bulanan",money(0)],["Sasaran dicapai oleh modal awal sahaja",""]];return[["Sumbangan bulanan diperlukan",money(m)],["Jumlah sumbangan",money(m*n)],["Modal awal selepas berkembang",money(v.P*g)]]}},
+    {id:"cagr",t:"Pulangan dan CAGR",f:[["a","Nilai awal (RM)","cth. 10000"],["b","Nilai akhir (RM)","cth. 15000"],["y","Tempoh (tahun)","cth. 5"]],
+      run:function(v){if(v.a<=0||v.y<=0||v.b<0)return null;return[["Pulangan tahunan terkumpul (CAGR)",pc2((Math.pow(v.b/v.a,1/v.y)-1)*100)],["Jumlah pulangan",pc2((v.b/v.a-1)*100)],["Untung / rugi",money(v.b-v.a)]]}},
+    {id:"sc",t:"Unit amanah: caj jualan dan bilangan unit",f:[["A","Jumlah pelaburan (RM)","cth. 5000"],["c","Caj jualan (%)","cth. 5.5"],["N","NAV seunit (RM)","cth. 0.5230"],["m","Caj jualan dikira atas","s",["% daripada NAV","% daripada jumlah pelaburan"]]],
+      run:function(v){if(v.A<=0||v.N<=0||v.c<0)return null;var u,ch,price;if(v.m===0){price=v.N*(1+v.c/100);u=v.A/price;ch=v.A-u*v.N}else{ch=v.A*v.c/100;u=(v.A-ch)/v.N;price=v.A/u}return[["Anggaran bilangan unit",u.toFixed(4)],["Caj jualan",money(ch)],["Nilai bersih pada NAV",money(u*v.N)],["Harga belian seunit (termasuk caj)",price.toFixed(4)]]},
+      n:"Cara caj dikira berbeza mengikut dana. Semak prospektus."},
+    {id:"pl",t:"Untung / rugi jual unit",opt:["f"],f:[["U","Bilangan unit","cth. 10000"],["b","NAV beli (RM)","cth. 0.5000"],["s","NAV jual (RM)","cth. 0.5600"],["f","Caj atau yuran jual (%)","cth. 0"]],
+      run:function(v){var cost=v.U*v.b;if(cost<=0)return null;var out=v.U*v.s*(1-v.f/100);return[["Untung / rugi",money(out-cost)],["Pulangan",pc2((out/cost-1)*100)],["Modal",money(cost)],["Hasil jualan",money(out)]]}},
+    {id:"dbl",t:"Tempoh wang bertambah dua kali ganda",f:[["r","Pulangan setahun (%)","cth. 6"]],
+      run:function(v){if(v.r<=0)return null;return[["Anggaran tempoh (tahun)",(Math.log(2)/Math.log(1+v.r/100)).toFixed(1)],["Peraturan 72 (tahun)",(72/v.r).toFixed(1)]]}},
+    {id:"real",t:"Pulangan sebenar selepas inflasi",f:[["r","Pulangan setahun (%)","cth. 6"],["f","Inflasi setahun (%)","cth. 2.5"]],
+      run:function(v){return[["Pulangan sebenar",pc2(((1+v.r/100)/(1+v.f/100)-1)*100)]]}},
+    {id:"infl",t:"Kesan inflasi terhadap nilai wang",f:[["A","Jumlah (RM)","cth. 10000"],["f","Inflasi setahun (%)","cth. 3"],["y","Tempoh (tahun)","cth. 10"]],
+      run:function(v){if(v.y<0)return null;var g=Math.pow(1+v.f/100,v.y);return[["Kos masa depan untuk barang yang kini bernilai jumlah ini",money(v.A*g)],["Kuasa beli jumlah ini pada masa itu",money(v.A/g)]]}},
+    {g:"Pinjaman"},
+    {id:"loan",t:"Pinjaman kadar baki berkurangan",f:[["P","Jumlah pinjaman (RM)","cth. 300000"],["r","Kadar setahun (%)","cth. 4.2"],["y","Tempoh (tahun)","cth. 30"]],
+      run:function(v){var n=Math.round(v.y*12);if(v.P<=0||n<=0||v.r<0)return null;var p=pmt(v.P,v.r/1200,n);return[["Bayaran bulanan",money(p)],["Jumlah bayaran",money(p*n)],["Jumlah faedah",money(p*n-v.P)]]},
+      n:"Sesuai untuk pinjaman rumah dan peribadi."},
+    {id:"flat",t:"Pinjaman kadar tetap (flat), contohnya kereta",f:[["P","Jumlah pinjaman (RM)","cth. 50000"],["r","Kadar flat setahun (%)","cth. 3"],["y","Tempoh (tahun)","cth. 5"]],
+      run:function(v){var n=Math.round(v.y*12);if(v.P<=0||n<=0||v.r<0)return null;var interest=v.P*v.r/100*v.y,pay=(v.P+interest)/n,lo=0,hi=1,k;for(k=0;k<100;k++){var mid=(lo+hi)/2;if(pmt(v.P,mid,n)<pay)lo=mid;else hi=mid}return[["Bayaran bulanan",money(pay)],["Jumlah faedah",money(interest)],["Jumlah bayaran",money(v.P+interest)],["Kadar efektif setahun (anggaran)",pc2(lo*1200)]]}},
+    {id:"afford",t:"Pinjaman maksimum yang mampu",f:[["B","Bayaran bulanan mampu (RM)","cth. 2000"],["r","Kadar setahun (%)","cth. 4.2"],["y","Tempoh (tahun)","cth. 30"]],
+      run:function(v){var n=Math.round(v.y*12);if(v.B<=0||n<=0||v.r<0)return null;var i=v.r/1200,L=i===0?v.B*n:v.B*(1-Math.pow(1+i,-n))/i;return[["Pinjaman maksimum",money(L)],["Jumlah bayaran",money(v.B*n)]]}},
+    {g:"Am"},
+    {id:"pct",t:"Peratus daripada nilai",f:[["p","Peratus (%)","cth. 15"],["v","Nilai (RM)","cth. 2000"]],
+      run:function(v){return[["Peratus daripada nilai",money(v.v*v.p/100)],["Nilai tambah peratus",money(v.v*(1+v.p/100))],["Nilai tolak peratus",money(v.v*(1-v.p/100))]]}},
+    {id:"chg",t:"Perubahan peratus",f:[["a","Nilai asal","cth. 80"],["b","Nilai baharu","cth. 100"]],
+      run:function(v){if(v.a===0)return null;var x=(v.b-v.a)/Math.abs(v.a)*100;return[["Perubahan",(x>=0?"+":"")+pc2(x)],["Beza",nfmt(v.b-v.a)]]}},
+    {id:"split",t:"Bahagi bil",opt:["s","x"],f:[["T","Jumlah bil (RM)","cth. 250"],["n","Bilangan orang","cth. 5"],["s","Caj servis (%)","cth. 10"],["x","Cukai SST (%)","cth. 6"]],
+      run:function(v){if(v.T<=0||v.n<1)return null;var sub=v.T*(1+v.s/100),tot=sub*(1+v.x/100);return[["Setiap orang",money(tot/v.n)],["Jumlah akhir",money(tot)]]},
+      n:"Cukai dikira atas jumlah selepas caj servis."}
+  ];
+  var calcBuilt=false;
+  function buildCalc(){
+    var kh="";
+    KEYROWS.forEach(function(r){r.forEach(function(k){kh+='<button data-k="'+k+'"'+("+−×÷%".indexOf(k)>-1&&k!==""?' class="op"':'')+'>'+k+'</button>'})});
+    $("kKeys").innerHTML=kh+'<button class="eq" data-k="=">=</button>';
+    var h="";
+    CALCS.forEach(function(c){
+      if(c.g){h+='<div class="grp">'+c.g+'</div>';return}
+      var buf=[];
+      c.f.forEach(function(f){
+        var ctl=f[2]==="s"?'<select data-k="'+f[0]+'">'+f[3].map(function(o,i){return'<option value="'+i+'">'+o+'</option>'}).join("")+'</select>':'<input data-k="'+f[0]+'" type="number" step="any" inputmode="decimal" placeholder="'+(f[2]||"")+'">';
+        buf.push('<label>'+f[1]+ctl+'</label>');
+      });
+      h+='<details class="sec" data-c="'+c.id+'"><summary><b>'+c.t+'</b></summary>';
+      for(var i=0;i<buf.length;i+=2)h+='<div class="two">'+buf[i]+(buf[i+1]||"<div></div>")+'</div>';
+      h+='<div class="cout"><div class="sub">Isi ruang di atas untuk melihat hasil.</div></div>'+(c.n?'<div class="sub">'+c.n+'</div>':'')+'</details>';
+    });
+    $("calcList").innerHTML=h;
+    calcBuilt=true;
+  }
+  function runCalc(box){
+    var id=box.getAttribute("data-c"),c=CALCS.filter(function(x){return x.id===id})[0],v={},ok=true;
+    c.f.forEach(function(f){
+      var el=box.querySelector('[data-k="'+f[0]+'"]');
+      if(f[2]==="s"){v[f[0]]=+el.value;return}
+      var n=parseFloat(el.value);
+      if(isNaN(n)){v[f[0]]=0;if(!(c.opt&&c.opt.indexOf(f[0])>-1))ok=false}else v[f[0]]=n;
+    });
+    var out=box.querySelector(".cout");
+    if(!ok){out.innerHTML='<div class="sub">Isi semua ruang yang diperlukan untuk melihat hasil.</div>';return}
+    var r;try{r=c.run(v)}catch(e){r=null}
+    if(!r||r.some(function(x){return/NaN|Infinity/.test(x[1])})){out.innerHTML='<div class="sub">Semak nilai yang dimasukkan.</div>';return}
+    out.innerHTML=r.map(function(x,i){return i===0?'<div class="sub">'+x[0]+'</div><div class="amt">'+x[1]+'</div>':'<div class="krow"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("");
+  }
+  function renderCalc(){if(!calcBuilt)buildCalc()}
+  $("kKeys").addEventListener("click",function(e){var b=e.target.closest("button[data-k]");if(b)kPress(b.getAttribute("data-k"))});
+  ["input","change"].forEach(function(ev){$("calcList").addEventListener(ev,function(e){var box=e.target.closest("details[data-c]");if(box)runCalc(box)})});
+  window.__UT={calcEval:calcEval,CALCS:CALCS,kPress:kPress};
   $("backup").onclick=function(){$("bk").value=JSON.stringify(S);$("dlg2").showModal()};
   $("bkCopy").onclick=function(){$("bk").select();try{navigator.clipboard.writeText($("bk").value)}catch(e){document.execCommand("copy")}};
   $("bkRestore").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!Array.isArray(o.funds))throw 0;

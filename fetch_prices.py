@@ -91,7 +91,7 @@ def update_history(rows, asof, path="history.json", keep=800):
 
 def main():
     from pypdf import PdfReader
-    req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0 jejak-dca"})
+    req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0 uttrace"})
     data = urllib.request.urlopen(req, timeout=60).read()
     text = "\n".join(p.extract_text() or "" for p in PdfReader(io.BytesIO(data)).pages)
     asof, rows = parse(text)
